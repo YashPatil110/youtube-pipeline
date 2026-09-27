@@ -19,26 +19,37 @@ load_dotenv(override=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-def generate_shorts_metadata(transcript: str) -> dict:
-    print("2. Generating high-CTR metadata via Gemini...")
-    prompt = f"""
+def generate_shorts_metadata(video_path: str) -> dict:
+    print("2. Generating high-CTR metadata & transcription via Gemini...")
+    uploaded_file = client.files.upload(file=video_path)
+    prompt = """
     You are an expert YouTube Shorts optimizer.
-    Analyze this clip transcript:
-    "{transcript}"
+    Analyze this video clip and its audio carefully:
+    1. Transcribe the spoken audio words into text.
+    2. Create a curiosity-driven, punchy title under 50 characters with 1 emoji.
+    3. Create a 2-sentence hook description highlighting the drama, tension, or surprise.
+    4. Provide 3-5 viral hashtags.
 
     Return ONLY a valid JSON object matching this schema:
-    {{
-      "title": "Curiosity-driven, punchy title under 50 characters with 1 emoji",
-      "description": "2-sentence hook highlighting the tension or drama",
+    {
+      "transcript": "Exact transcription of spoken audio",
+      "title": "Punchy title under 50 characters with 1 emoji",
+      "description": "2-sentence hook description",
       "tags": ["shorts", "entertainment", "challenge"]
-    }}
+    }
     """
-    response = client.models.generate_content(
-        model='gemini-3.5-flash-lite',
-        contents=prompt,
-        config={'response_mime_type': 'application/json'}
-    )
-    return json.loads(response.text)
+    try:
+        response = client.models.generate_content(
+            model='gemini-3.5-flash-lite',
+            contents=[uploaded_file, prompt],
+            config={'response_mime_type': 'application/json'}
+        )
+        return json.loads(response.text)
+    finally:
+        try:
+            client.files.delete(name=uploaded_file.name)
+        except Exception:
+            pass
 
 from datetime import datetime
 
@@ -81,11 +92,10 @@ async def main(source_url: str, start_sec: int = 15, duration_sec: int = 40):
     )
     
     local_clip_path = clip_result["local_video_path"]
-    transcript = clip_result["transcript"]
+    # 2. Generate Metadata & Transcript via Gemini AI
+    metadata = generate_shorts_metadata(local_clip_path)
+    transcript = metadata.get("transcript", "")
     print(f"   Extracted Transcript: {transcript[:120]}...")
-
-    # 2. Generate Metadata via Gemini API
-    metadata = generate_shorts_metadata(transcript)
     print(f"   Generated Title: {metadata['title']}")
 
     # 3. Send Preview to Telegram with Inline Approval Buttons

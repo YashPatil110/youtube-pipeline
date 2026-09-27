@@ -2,10 +2,6 @@ import os
 import time
 import subprocess
 import yt_dlp
-import whisper
-
-print("Loading Whisper model...")
-model = whisper.load_model("tiny")
 
 def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
     raw_video = "downloaded_raw.mkv"
@@ -82,12 +78,7 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
         ]
         subprocess.run(crop_cmd, check=True)
 
-    # 4. Transcribe audio locally using Whisper
-    print("Transcribing audio hook with Whisper...")
-    result = model.transcribe(output_short, fp16=False)
-    transcript = result.get("text", "").strip()
-
-    # Clean up large raw download to save disk space
+    # Clean up large raw download if any to save disk space
     if os.path.exists(raw_video):
         try:
             os.remove(raw_video)
@@ -95,6 +86,5 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
             pass
 
     return {
-        "local_video_path": output_short,
-        "transcript": transcript
-    }
+        "local_video_path": output_short
+    }

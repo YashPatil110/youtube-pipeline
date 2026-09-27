@@ -6,7 +6,5 @@ google-api-python-client>=2.120.0
 google-auth-httplib2>=0.2.0
 google-auth-oauthlib>=1.2.0
 yt-dlp>=2025.1.0
-openai-whisper
-torch
 python-telegram-bot>=21.0
 pillow>=10.0.0

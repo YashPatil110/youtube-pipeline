@@ -106,17 +106,18 @@ def run_pipeline_worker(url: str, start_sec: int, duration_sec: int):
         job_state["progress"] = 35
         job_state["error_message"] = None
 
-        # Step 1: Clip & Transcribe
+        # Step 1: Clip & 9:16 Vertical Crop
         clip_result = download_and_clip(youtube_url=url, start_sec=start_sec, duration_sec=duration_sec)
-        job_state["local_video_path"] = clip_result["local_video_path"]
-        job_state["transcript"] = clip_result["transcript"]
+        local_video_path = clip_result["local_video_path"]
+        job_state["local_video_path"] = local_video_path
 
-        # Step 2: Gemini Metadata
-        job_state["step"] = "Generating viral title & tags with Gemini AI..."
+        # Step 2: Gemini Multimodal AI Transcription & Metadata
+        job_state["step"] = "AI transcribing audio & crafting viral title/tags..."
         job_state["progress"] = 75
 
-        metadata = generate_shorts_metadata(clip_result["transcript"])
+        metadata = generate_shorts_metadata(local_video_path)
         job_state["metadata"] = metadata
+        job_state["transcript"] = metadata.get("transcript", "")
         job_state["progress"] = 100
         job_state["step"] = "Clip ready for review!"
         job_state["status"] = "review_ready"
