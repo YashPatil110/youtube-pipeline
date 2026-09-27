@@ -1,0 +1,25 @@
+# Secrets & credentials
+.env
+*.pickle
+token.pickle
+client_secret.json
+
+# Video artifacts & temp files
+*.mp4
+*.mkv
+*.webm
+*.part
+downloaded_raw.*
+output_short.mp4
+test_*
+stream_*
+temp_*
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+history_log.json
+*.log

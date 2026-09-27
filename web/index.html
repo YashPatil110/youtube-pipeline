@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>YouTube Shorts Automation Studio</title>
+  <meta name="description" content="Generate, review, and auto-publish vertical YouTube Shorts powered by Whisper and Gemini AI.">
+  <meta name="theme-color" content="#0a0d14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shorts Studio">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <link rel="icon" type="image/png" href="/static/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-badge">
+          <svg viewBox="0 0 24 24">
+            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Shorts AI Studio</h1>
+          <p>Instant 9:16 Vertical Clipper & Auto-Publisher</p>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <button id="btn-install-app" class="device-badge" style="display:none; cursor:pointer; background:rgba(99,102,241,0.25); border-color:#6366f1; color:#fff; font-weight:600;">
+          <span>📲 Install App</span>
+        </button>
+        <div class="device-badge" id="network-badge">
+          <span class="dot"></span>
+          <span id="network-ip-label">Online • Multi-Device</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="main-grid">
+      <!-- Left Column: Input Form & Progress -->
+      <section class="card" id="input-card">
+        <h2 class="card-title">
+          <span>⚡</span> Video Source & Timestamps
+        </h2>
+
+        <form id="clip-form">
+          <div class="form-group">
+            <label for="video-url">YouTube Video URL</label>
+            <input 
+              type="text" 
+              id="video-url" 
+              placeholder="https://www.youtube.com/watch?v=..." 
+              required
+              value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+            >
+          </div>
+
+          <div class="time-grid">
+            <div class="form-group">
+              <label for="start-sec">Start Time (seconds)</label>
+              <input type="number" id="start-sec" min="0" value="30" required>
+            </div>
+            <div class="form-group">
+              <label for="duration-sec">Duration (seconds)</label>
+              <input type="number" id="duration-sec" min="10" max="60" value="35" required>
+            </div>
+          </div>
+
+          <div class="presets">
+            <span style="font-size:0.75rem; color:var(--text-dim); align-self:center;">Duration presets:</span>
+            <button type="button" class="btn-preset" onclick="setDuration(15)">15s</button>
+            <button type="button" class="btn-preset" onclick="setDuration(30)">30s</button>
+            <button type="button" class="btn-preset" onclick="setDuration(35)">35s</button>
+            <button type="button" class="btn-preset" onclick="setDuration(50)">50s</button>
+          </div>
+
+          <button type="submit" id="btn-generate" class="btn-primary">
+            <span>✨</span> Generate Vertical Clip & AI Metadata
+          </button>
+        </form>
+
+        <!-- Live Progress Status -->
+        <div id="progress-container" class="progress-card">
+          <div class="progress-header">
+            <span id="progress-step-text" class="progress-step-text">Starting pipeline...</span>
+            <div class="spinner" id="progress-spinner"></div>
+          </div>
+          <div class="progress-bar-container">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Editable Metadata Box (appears when clip is ready) -->
+        <div id="review-metadata-box" class="review-box" style="display: none;">
+          <h2 class="card-title" style="margin-top: 1.5rem;">
+            <span>🤖</span> AI Generated Metadata
+          </h2>
+
+          <div class="form-group">
+            <label for="edit-title">Short Title (Punchy hook)</label>
+            <input type="text" id="edit-title" maxlength="100">
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description</label>
+            <textarea id="edit-description" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-tags">Tags (comma separated)</label>
+            <input type="text" id="edit-tags">
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Video Preview & Action Buttons -->
+      <section class="card preview-container" id="preview-card">
+        <h2 class="card-title" style="align-self: flex-start;">
+          <span>📱</span> 9:16 Shorts Preview
+        </h2>
+
+        <div class="video-frame-wrapper" id="video-frame-wrapper">
+          <div class="empty-preview" id="empty-preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+              <rect x="5" y="2" width="14" height="20" rx="2"></rect>
+              <line x1="12" y1="18" x2="12" y2="18.01"></line>
+            </svg>
+            <p>Your 9:16 vertical Short will appear here for review before publishing.</p>
+          </div>
+          <video id="preview-video" controls playsinline style="display: none;"></video>
+        </div>
+
+        <!-- Approve & Discard Buttons -->
+        <div class="actions-grid" id="action-buttons-grid" style="display: none;">
+          <button id="btn-approve" class="btn-approve" onclick="publishShort()">
+            <span>🚀</span> Publish to YouTube
+          </button>
+          <button id="btn-discard" class="btn-discard" onclick="discardShort()">
+            <span>🗑</span> Discard
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- History Log Table -->
+    <section class="history-section">
+      <div class="history-card">
+        <h2 class="card-title">
+          <span>📜</span> Recent Shorts History
+        </h2>
+        <div id="history-list" class="history-list">
+          <p style="color:var(--text-dim); font-size:0.9rem;">No shorts generated yet.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

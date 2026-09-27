@@ -1,0 +1,12 @@
+fastapi>=0.110.0
+uvicorn>=0.28.0
+python-dotenv>=1.0.1
+google-genai>=2.25.0
+google-api-python-client>=2.120.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.0
+yt-dlp>=2025.1.0
+openai-whisper
+torch
+python-telegram-bot>=21.0
+pillow>=10.0.0
