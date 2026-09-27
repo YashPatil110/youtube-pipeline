@@ -1,4 +1,5 @@
 import os
+import base64
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -8,6 +9,23 @@ import pickle
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 def get_youtube_service():
+    # Auto-restore credentials in cloud environments from environment variables
+    token_b64 = os.getenv("YOUTUBE_TOKEN_BASE64")
+    if token_b64 and not os.path.exists("token.pickle"):
+        try:
+            with open("token.pickle", "wb") as f:
+                f.write(base64.b64decode(token_b64))
+        except Exception as e:
+            print("Failed to decode YOUTUBE_TOKEN_BASE64:", e)
+
+    client_secret_env = os.getenv("CLIENT_SECRET_JSON")
+    if client_secret_env and not os.path.exists("client_secret.json"):
+        try:
+            with open("client_secret.json", "w", encoding="utf-8") as f:
+                f.write(client_secret_env)
+        except Exception as e:
+            print("Failed to write CLIENT_SECRET_JSON:", e)
+
     creds = None
     if os.path.exists("token.pickle"):
         with open("token.pickle", "rb") as token:
