@@ -52,16 +52,17 @@ CURATED_SHOW_MOMENTS = {
             "hook_reason": "Peak Fire Drill Replay Spike (Score: 1.0)"
         },
         {
-            "video_url": "https://www.youtube.com/watch?v=M8KmqaJvgpE",
-            "video_title": "The Office Best Moments (ALL SEASONS)",
-            "start_sec": 538,
+            "video_url": "https://www.youtube.com/watch?v=y5jchMm0Ae8",
+            "video_title": "The Office US - Michael Scott Iconic Moments",
+            "start_sec": 315,
             "duration_sec": 40,
-            "end_sec": 578,
+            "end_sec": 355,
             "replay_score": 0.98,
             "vibe": "funny",
-            "hook_reason": "Jim Pranks Dwight Iconic Moment (Score: 0.98)"
+            "hook_reason": "Jim Pranks Dwight Replay Spike (Score: 0.98)"
         }
     ],
+
     "friends": [
         {
             "video_url": "https://www.youtube.com/watch?v=kAAKPjDEHrk",

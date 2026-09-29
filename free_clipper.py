@@ -1,7 +1,15 @@
 import os
+import sys
 import time
 import subprocess
 import yt_dlp
+
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 
 def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
     raw_video = "downloaded_raw.mkv"
@@ -21,7 +29,9 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
         print(f"Extracting stream URLs for fast clipping: {youtube_url}")
         ydl_opts = {
             'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
-            'quiet': True
+            'quiet': True,
+            'no_warnings': True,
+            'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
@@ -43,9 +53,10 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
         subprocess.run(crop_cmd, check=True)
         if os.path.exists(output_short) and os.path.getsize(output_short) > 10000:
             stream_success = True
-            print("⚡ Fast stream crop completed in seconds!")
+            print("[FAST STREAM] Fast stream crop completed in seconds!")
     except Exception as e:
         print(f"Stream-seeking unavailable ({e}). Falling back to full download.")
+
 
     # 3. Fallback if streaming extraction failed
     if not stream_success:
@@ -54,8 +65,10 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
             'merge_output_format': 'mkv',
             'outtmpl': 'downloaded_raw.%(ext)s',
             'overwrites': True,
-            'quiet': False
+            'quiet': False,
+            'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
         }
+
 
         print(f"Downloading stream from YouTube: {youtube_url}")
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
