@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shorts-studio-v1';
+const CACHE_NAME = 'shorts-studio-v2';
 const STATIC_ASSETS = [
   '/',
   '/static/style.css',
@@ -9,11 +9,6 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -32,17 +27,22 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-First strategy: Always fetch newest code first, fall back to cache if offline
 self.addEventListener('fetch', (event) => {
-  // Let dynamic API calls go directly to the network
   if (event.request.url.includes('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Cache-first for static UI assets
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+          const cloned = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
