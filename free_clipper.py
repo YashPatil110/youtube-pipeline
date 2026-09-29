@@ -23,6 +23,14 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
             except OSError:
                 pass
 
+    cookie_file = "cookies.txt"
+    if os.getenv("YOUTUBE_COOKIES"):
+        try:
+            with open(cookie_file, "w", encoding="utf-8") as cf:
+                cf.write(os.getenv("YOUTUBE_COOKIES"))
+        except Exception:
+            pass
+
     # 2. Try fast direct stream cropping (avoids downloading huge 500MB-1GB files)
     stream_success = False
     try:
@@ -31,8 +39,16 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
             'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
             'quiet': True,
             'no_warnings': True,
-            'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android'],
+                    'player_skip': ['web', 'web_embedded']
+                }
+            }
         }
+        if os.path.exists(cookie_file):
+            ydl_opts['cookiefile'] = cookie_file
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(youtube_url, download=False)
             formats = info.get('requested_formats') or [info]
@@ -57,7 +73,6 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
     except Exception as e:
         print(f"Stream-seeking unavailable ({e}). Falling back to full download.")
 
-
     # 3. Fallback if streaming extraction failed
     if not stream_success:
         ydl_opts = {
@@ -66,8 +81,16 @@ def download_and_clip(youtube_url: str, start_sec: int, duration_sec: int = 40):
             'outtmpl': 'downloaded_raw.%(ext)s',
             'overwrites': True,
             'quiet': False,
-            'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android'],
+                    'player_skip': ['web', 'web_embedded']
+                }
+            }
         }
+        if os.path.exists(cookie_file):
+            ydl_opts['cookiefile'] = cookie_file
+
 
 
         print(f"Downloading stream from YouTube: {youtube_url}")
