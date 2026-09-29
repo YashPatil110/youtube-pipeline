@@ -44,6 +44,51 @@
       </div>
     </header>
 
+    <!-- Show & Podcast Viral Hook Extractor / Autopilot Trend Hunter -->
+    <section class="trend-card" id="trend-hunter-card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <h2 class="card-title">
+            <span>🔥</span> Show & Podcast Viral Hook Extractor
+          </h2>
+          <p class="trend-badge-sub">Enter any Show Name or Podcast URL. AI scans YouTube Replay Heatmaps to pinpoint highest-engagement moments. Leave empty for 24/7 Daily Trending Autopilot!</p>
+        </div>
+        <button type="button" class="btn-autopilot" id="btn-autopilot-run" onclick="runAutopilotTrends()">
+          <span>🤖</span> 1-Click Autopilot (Daily Queue)
+        </button>
+      </div>
+
+      <div class="trend-inputs-grid">
+        <input 
+          type="text" 
+          id="trend-search-input" 
+          placeholder="e.g. Friends, The Office, Kapil Sharma Show, Modern Family, or Podcast URL..."
+        >
+        <button type="button" class="btn-primary" id="btn-trend-search" onclick="huntViralHooks()" style="width:auto; padding:0.75rem 1.4rem;">
+          <span>🔍</span> Scan Viral Moments
+        </button>
+      </div>
+
+      <!-- Quick Show Name Suggestions -->
+      <div class="trend-quick-tags">
+        <span style="font-size:0.75rem; color:var(--text-dim);">Popular Shows:</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('The Office')">🏢 The Office</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('Friends')">☕ Friends</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('Kapil Sharma Show')">😂 Kapil Sharma Show</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('Modern Family')">🏡 Modern Family</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('Shark Tank')">🦈 Shark Tank</span>
+        <span class="quick-tag-chip" onclick="quickSelectShow('Trending Podcast')">🎙️ Viral Podcast</span>
+      </div>
+
+      <!-- Discovered Hooks List -->
+      <div id="discovered-hooks-box" style="display:none;">
+        <h3 style="font-size:0.9rem; color:var(--text-muted); margin-bottom:0.6rem; display:flex; align-items:center; gap:0.4rem;">
+          <span>🎯</span> Highest-Engagement Clips Found:
+        </h3>
+        <div id="discovered-hooks-list" class="discovered-hooks-container"></div>
+      </div>
+    </section>
+
     <!-- Main Workspace Grid -->
     <main class="main-grid">
       <!-- Left Column: Input Form & Progress -->

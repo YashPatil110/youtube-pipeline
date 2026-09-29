@@ -314,3 +314,117 @@ if (installBtn) {
     deferredPrompt = null;
   });
 }
+
+// ==========================================
+// Trend Hunter & Viral Hook Extractor Client
+// ==========================================
+
+function quickSelectShow(showName) {
+  document.getElementById('trend-search-input').value = showName;
+  huntViralHooks();
+}
+
+async function runAutopilotTrends() {
+  document.getElementById('trend-search-input').value = '';
+  await huntViralHooks(true);
+}
+
+async function huntViralHooks(isAutopilot = false) {
+  const queryInput = document.getElementById('trend-search-input');
+  const query = isAutopilot ? '' : queryInput.value.trim();
+  const searchBtn = document.getElementById('btn-trend-search');
+  const autoBtn = document.getElementById('btn-autopilot-run');
+  const hooksBox = document.getElementById('discovered-hooks-box');
+  const hooksList = document.getElementById('discovered-hooks-list');
+
+  const activeBtn = isAutopilot ? autoBtn : searchBtn;
+  const originalHtml = activeBtn.innerHTML;
+  activeBtn.disabled = true;
+  activeBtn.innerHTML = '<span>⏳</span> AI Scanning Heatmaps...';
+
+  try {
+    const res = await fetch('/api/hunt-trends', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: query,
+        num_shorts: 3,
+        duration_sec: 40
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to scan viral moments');
+    }
+
+    const data = await res.json();
+    hooksBox.style.display = 'block';
+
+    if (!data.shorts || data.shorts.length === 0) {
+      hooksList.innerHTML = '<p style="color:var(--text-dim); font-size:0.85rem;">No peak moments found. Try another show name or link.</p>';
+      return;
+    }
+
+    const modeText = data.mode === 'autopilot' 
+      ? '🤖 24/7 Autopilot Queue (Trending Videos)' 
+      : `🎬 Viral Moments for "${escapeHtml(data.query)}"`;
+
+    showToast(`Found ${data.shorts.length} viral hooks!`, 'success');
+
+    hooksList.innerHTML = data.shorts.map((hook, idx) => {
+      const vibeClass = `vibe-${hook.vibe || 'entertainment'}`;
+      const vibeEmoji = {
+        romantic: '💖 Romantic Scene',
+        funny: '😂 Comedy / Joke',
+        tension: '⚡ Peak Tension',
+        motivational: '🎯 High Motivation',
+        entertainment: '🔥 Viral Clip'
+      }[hook.vibe] || '🔥 Viral Clip';
+
+      const min = Math.floor(hook.start_sec / 60);
+      const sec = hook.start_sec % 60;
+      const timeStr = `${min}m ${sec < 10 ? '0' : ''}${sec}s (${hook.duration_sec}s)`;
+
+      return `
+        <div class="hook-card">
+          <div style="flex:1; min-width:240px;">
+            <div class="hook-title">#${idx + 1}: ${escapeHtml(hook.video_title)}</div>
+            <div class="hook-meta-row">
+              <span class="vibe-tag ${vibeClass}">${vibeEmoji}</span>
+              <span class="replay-badge">📈 Replay Peak: ${hook.replay_score || '1.0'}</span>
+              <span>⏱ ${timeStr}</span>
+              <span style="color:var(--text-dim); font-size:0.75rem;">• ${escapeHtml(hook.hook_reason)}</span>
+            </div>
+          </div>
+          <div>
+            <button 
+              type="button" 
+              class="btn-clip-hook"
+              onclick="loadHookIntoStudio('${escapeHtml(hook.video_url)}', ${hook.start_sec}, ${hook.duration_sec})"
+            >
+              <span>⚡</span> Load & Clip
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    activeBtn.disabled = false;
+    activeBtn.innerHTML = originalHtml;
+  }
+}
+
+function loadHookIntoStudio(url, startSec, durationSec) {
+  document.getElementById('video-url').value = url;
+  document.getElementById('start-sec').value = startSec;
+  document.getElementById('duration-sec').value = durationSec;
+
+  // Smooth scroll down to clipper form
+  document.getElementById('input-card').scrollIntoView({ behavior: 'smooth' });
+  showToast(`Loaded timestamp ${startSec}s! Ready to generate Short.`, 'success');
+}
+

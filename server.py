@@ -16,6 +16,8 @@ load_dotenv(override=True)
 from free_clipper import download_and_clip
 from pipeline import generate_shorts_metadata, log_decision
 from youtube_uploader import upload_short
+from trend_hunter import get_daily_viral_shorts_plan
+
 
 app = FastAPI(title="YouTube Shorts Studio")
 
@@ -50,10 +52,16 @@ class ProcessRequest(BaseModel):
     start_sec: int = 30
     duration_sec: int = 35
 
+class HuntTrendsRequest(BaseModel):
+    query: Optional[str] = ""
+    num_shorts: int = 3
+    duration_sec: int = 40
+
 class PublishRequest(BaseModel):
     title: str
     description: str
     tags: list[str]
+
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
@@ -97,7 +105,25 @@ async def get_history():
     except Exception:
         return []
 
+@app.post("/api/hunt-trends")
+
+async def api_hunt_trends(req: HuntTrendsRequest):
+    try:
+        plan = get_daily_viral_shorts_plan(
+            query=req.query,
+            num_shorts=req.num_shorts,
+            target_duration=req.duration_sec
+        )
+        return {
+            "query": req.query or "",
+            "mode": "manual" if (req.query and req.query.strip()) else "autopilot",
+            "shorts": plan
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def run_pipeline_worker(url: str, start_sec: int, duration_sec: int):
+
     global job_state
     try:
         job_state["status"] = "processing"

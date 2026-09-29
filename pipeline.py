@@ -7,6 +7,8 @@ from google import genai
 from telegram_approver import request_approval
 from youtube_uploader import upload_short
 from free_clipper import download_and_clip
+from trend_hunter import get_daily_viral_shorts_plan, extract_viral_hooks_from_video
+
 
 if sys.stdout.encoding != 'utf-8':
     try:
@@ -78,13 +80,34 @@ def log_decision(source_url: str, metadata: dict, decision: str, youtube_url: st
     except Exception as e:
         print(f"⚠️ Could not write to {log_file}: {e}")
 
-async def main(source_url: str, start_sec: int = 15, duration_sec: int = 40):
-    print("=" * 50)
-    print("STARTING YOUTUBE SHORTS AUTOMATION PIPELINE")
-    print("=" * 50)
+async def run_pipeline(source_url: str = None, start_sec: int = None, duration_sec: int = 40, show_query: str = None):
+    print("=" * 60)
+    print("🎬 YOUTUBE SHORTS VIRAL HOOK & AUTOMATION PIPELINE")
+    print("=" * 60)
 
-    # 1. Download, Center-Crop (9:16), and Extract Transcript locally (100% Free)
-    print(f"1. Processing clip from: {source_url}")
+    # 1. Determine clip target using Trend Hunter if URL or timestamp is not explicitly provided
+    if not source_url or start_sec is None:
+        target_query = show_query or source_url
+        if target_query:
+            print(f"🔎 Scanning viral hooks for show/podcast: '{target_query}'...")
+        else:
+            print("🤖 No input provided -> Activating 24/7 Autopilot Trend Hunter!")
+
+        plan = get_daily_viral_shorts_plan(query=target_query, num_shorts=1, target_duration=duration_sec)
+        if not plan:
+            print("⚠️ Could not locate a viral candidate. Please check connection.")
+            return
+
+        chosen = plan[0]
+        source_url = chosen["video_url"]
+        start_sec = chosen["start_sec"]
+        duration_sec = chosen["duration_sec"]
+        print(f"🎯 Selected Hook: {chosen['video_title']}")
+        print(f"   Vibe: [{chosen['vibe'].upper()}] | Time: {start_sec}s - {chosen['end_sec']}s ({duration_sec}s)")
+        print(f"   Reason: {chosen['hook_reason']}")
+
+    # 2. Download, Center-Crop (9:16), and Extract locally (100% Free)
+    print(f"\n1. Processing clip from: {source_url} (Start: {start_sec}s, Duration: {duration_sec}s)")
     clip_result = download_and_clip(
         youtube_url=source_url, 
         start_sec=start_sec, 
@@ -92,16 +115,17 @@ async def main(source_url: str, start_sec: int = 15, duration_sec: int = 40):
     )
     
     local_clip_path = clip_result["local_video_path"]
-    # 2. Generate Metadata & Transcript via Gemini AI
+    
+    # 3. Generate Metadata & Transcript via Gemini AI
     metadata = generate_shorts_metadata(local_clip_path)
     transcript = metadata.get("transcript", "")
     print(f"   Extracted Transcript: {transcript[:120]}...")
     print(f"   Generated Title: {metadata['title']}")
 
-    # 3. Send Preview to Telegram with Inline Approval Buttons
+    # 4. Send Preview to Telegram with Inline Approval Buttons
     decision = await request_approval(local_clip_path, metadata)
 
-    # 4. Upload to YouTube Shorts if you tap "Approve"
+    # 5. Upload to YouTube Shorts if approved
     if decision == "approved":
         print("4. Upload approved by user. Initiating YouTube upload...")
         video_id = upload_short(
@@ -126,10 +150,17 @@ async def main(source_url: str, start_sec: int = 15, duration_sec: int = 40):
                 print(f"⚠️ Failed to remove {local_clip_path}: {e}")
 
 if __name__ == "__main__":
-    # Test with any long YouTube link (e.g., an entertainment show, podcast, or game highlight)
-    # Set the starting timestamp in seconds (start_sec) where the action happens
-    TEST_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"  # Replace with your test link
-    START_SECOND = 30
-    CLIP_DURATION = 35
+    import argparse
+    parser = argparse.ArgumentParser(description="YouTube Shorts Automation Pipeline with Trend Hunter")
+    parser.add_argument("--url", type=str, default=None, help="Direct YouTube or podcast link")
+    parser.add_argument("--show", type=str, default=None, help="Show name (e.g. 'Friends', 'The Office', 'Kapil Sharma Show')")
+    parser.add_argument("--start", type=int, default=None, help="Start time in seconds (optional, auto-detected if omitted)")
+    parser.add_argument("--duration", type=int, default=40, help="Clip duration in seconds (30-60s)")
+    args = parser.parse_args()
 
-    asyncio.run(main(TEST_URL, start_sec=START_SECOND, duration_sec=CLIP_DURATION))
+    asyncio.run(run_pipeline(
+        source_url=args.url,
+        start_sec=args.start,
+        duration_sec=args.duration,
+        show_query=args.show
+    ))
